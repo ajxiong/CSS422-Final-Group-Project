@@ -27,7 +27,7 @@ SECONDNUM   LEA         INTRO2,A1       ; load message asking for second number 
             TRAP        #15             ; read a string from the keyboard and store at (A1)
 
 HEX         ADD.B       #1,D3           ; add 1 to D3 - use to keep track of whether on first or second user input
-            MOVE.B      #8,D4           ; set D4 to 7
+            MOVE.B      #8,D4           ; set D4 to 8
             
 LETTER      CMP.B       #0,D4           ; use D4 to keep track of where in input you're at
             BEQ         CHECK           ; branch to checking validity of input if entire input taken
@@ -87,16 +87,65 @@ NEXT        MOVE.L      CURR,D6         ; move curr to D6 in order to compare wi
             MOVE.L      END,D7          ; move end to D7 in order to compare with curr
             CMP.L       D7,D6           ; compare current address to end address
             BGT         DONE
-            ; need to increment curr but not sure how to know how much to do that by each time
+            ; need to increment curr by opcode + EA - maybe save that amount in a variable or register since it changes each time
             CLR.L       D0              ; clear D0
             CLR.L       D1              ; clear D1
             CLR.L       D2              ; clear D2
             CLR.L       D3              ; clear D3
             CLR.L       D4              ; clear D4
             CLR.L       D5              ; clear D5
+            CLR         (A2)+           ; clear (A2)+
+            MOVE.L      CURR,A1         ; move curr to A1
+            MOVE.L      (A1),D0         ; move A1's address's contents to D0
+            MOVE.B      #4,D4           ; move #4 to D4 to keep track
+            JSR         ASCII           ; translate to ASCII
+            BRA         OPCODE          ; skip to opcode
             
-            MOVE.L      CURR,D0         ; move curr to D0
-            ROL.L       #8,D0           ; rotate first 8 bits of op-code to far right
+ASCII       CMP.B       #0,D4           ; use D4 to keep track of where in input you're at
+            BEQ         OPCODE          ; branch to translating opcode if all of address translated
+            SUBI.B      #1,D4           ; subtract 1 from D4 to keep track of number of loops (need 8 - 1 for each hex digit)
+            ROL.L       #4,D0           ; rotate D0 4 bits to the left to bring leftmost bits far right
+            MOVE.B      D0,D1           ; move D0 to D1
+            AND.B       #$0F,D1         ; get rid of 4/8 bits, leaving just four rightmost bits
+            CMP.B       #$09,D1         ; compare $9 to D1 to see if 1-9
+            BGT         ASCIIA          ; if greater branch to hexa
+            ADD.B       #$30,D1         ; add #$30 to D1 to convert to ASCII
+            BRA         TOBUFFER        ; skip to adding to buffer
+            
+ASCIIA      CMP.B       #$0A,D1         ; compare $A to D1
+            BGE         ASCIIB          ; go to ASCIIB if bigger
+            MOVE.B      #$41,D1         ; replace $A with $41
+            BRA         TOBUFFER        ; skip to adding to buffer
+            
+ASCIIB      CMP.B       #$0B,D1         ; compare $B to D1
+            BGE         ASCIIC          ; go to ASCIIC if bigger
+            MOVE.B      #$42,D1         ; replace $B with $42
+            BRA         TOBUFFER        ; skip to adding to buffer
+            
+ASCIIC      CMP.B       #$0C,D1         ; compare $C to D1
+            BGE         ASCIID          ; go to ASCIID if bigger
+            MOVE.B      #$43,D1         ; replace $C with $43
+            BRA         TOBUFFER        ; skip to adding to buffer
+            
+ASCIID      CMP.B       #$0D,D1         ; compare $D to D1
+            BGE         ASCIIE          ; go to ASCIIE if bigger
+            MOVE.B      #$44,D1         ; replace $D with $44
+            BRA         TOBUFFER        ; skip to adding to buffer
+            
+ASCIIE      CMP.B       #$0E,D1         ; compare $E to D1
+            BGE         ASCIIF          ; go to ASCIIF if bigger
+            MOVE.B      #$45,D1         ; replace $E with $45
+            BRA         TOBUFFER        ; skip to adding to buffer
+            
+ASCIIF      MOVE.B      #$46,D1         ; replace $F with $46
+            BRA         TOBUFFER        ; skip to adding to buffer
+            
+TOBUFFER    MOVE.B      D1,(A2)+        ; move to buffer
+            BRA         ASCII           ; branch back to translate other hex digits if any
+            
+TRANSLATED  RTS                         ; RTS after everything translated to ASCII
+
+OPCODE      ROL.L       #8,D0           ; rotate first 8 bits of op-code to far right
             MOVE.B      D0,D1           ; move right-most 8 bits of D0 to D1
             LSR.L       #4,D1           ; now D1 is the isolated first 4 bits of the opcode
             ROR.L       #8,D0           ; rotate D0 back to how it was originally
@@ -131,19 +180,19 @@ NEXT        MOVE.L      CURR,D6         ; move curr to D6 in order to compare wi
             CMP.B       #$9,D1          ; compare D1 to 1001
             BEQ         CODE1001        ; branch to code1001 if equal
             
-            CMP.B       #$10,D1         ; compare D1 to 1010
+            CMP.B       #$A,D1          ; compare D1 to 1010
             BEQ         CODE1010        ; branch to code1010 if equal
             
-            CMP.B       #$11,D1         ; compare D1 to 1011
+            CMP.B       #$B,D1          ; compare D1 to 1011
             BEQ         CODE1011        ; branch to code1011 if equal
             
-            CMP.B       #$12,D1         ; compare D1 to 1100
+            CMP.B       #$C,D1          ; compare D1 to 1100
             BEQ         CODE1100        ; branch to code1100 if equal
             
-            CMP.B       #$13,D1         ; compare D1 to 1101
+            CMP.B       #$D,D1          ; compare D1 to 1101
             BEQ         CODE1101        ; branch to code1101 if equal
             
-            CMP.B       #$14,D1         ; compare D1 to 1110
+            CMP.B       #$E,D1          ; compare D1 to 1110
             BEQ         CODE1110        ; branch to code1110 if equal
             
             BRA         CODE1111        ; branch to code1111
@@ -180,10 +229,29 @@ CODE1110    ; code is ROR or ROL or ASR or ASL or LSR or LSL
 
 CODE1111    BRA         UNKNOWN         ; not a known opcode
 
-UNKNOWN     ; print some type of placeholder message that says not a known code
-            BRA         NEXT            ; go back up to next to translate next line of memory
+UNKNOWN     MOVE.B      #'D',(A2)+      ; add D to (A2)+ for unknown DATA code
+            MOVE.B      #'A',(A2)+      ; add A to (A2)+ for unknown DATA code
+            MOVE.B      #'T',(A2)+      ; add T to (A2)+ for unknown DATA code
+            MOVE.B      #'A',(A2)+      ; add A to (A2)+ for unknown DATA code
+            MOVE.B      #' ',(A2)+      ; add some spaces for alignment
+            MOVE.B      #' ',(A2)+
+            MOVE.B      #' ',(A2)+
+            MOVE.B      #' ',(A2)+
+            MOVE.B      #4,D4           ; add 4 to D4 to go through ASCII loop 4x
+            MOVE.L      CURR,A1         ; move curr to A1
+            MOVE.L      (A1),D0         ; move data at A1's address to curr
+            JSR         ASCII           ; go to ASCII loop to translate code to ASCII and add them to (A2)+
+            ; possibly need to add newline (CR,LF) as well
+            BRA         PRINT              ; branch to print unknown line
+
+EA          ; need to find EA (if any, need to convert rest of memory if any to hex too), add to (A2)+ after converting back to ascii, increment CURR by corresponding amount for opcode + EA
+            BRA         PRINT           ; branch to print results
             
-; need to translate EA and print all results
+PRINT       ; need to print (A2)+ which stores all the info but not sure how
+            ; also not sure yet whether to use #13 or #14 FOR TRAP #15
+            MOVE.B      #14,D0          ; move #14 to D0 to print A1
+            TRAP        #15             ; print contents of A1 (the contents of one line of memory)
+            BRA         NEXT            ; go back up to next to translate next line of instructions
             
 DONE        ; end of code - need to add something here?
 
