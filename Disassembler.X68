@@ -1,4 +1,4 @@
-*-----------------------------------------------------------
+    *-----------------------------------------------------------
 * Title      : Final Project
 * Written by : MysteryHuskies
 * Date       : 7/28/21
@@ -225,33 +225,117 @@ CODE1100    ; code is AND
 
 CODE1101    ; code is ADD
 
-CODE1110    ; code is ROR or ROL or ASR or ASL or LSR or LSL
+CODE1110    ; comments for reference - can delete later after code is all written and tested
+            ; code is ROR or ROL or ASR or ASL or LSR or LSL
+            ; register: LSL - ???1, LSR - ???0 (2 size) (1 i/r) (01) (3 register)
+            ; memory: LSL - 0011, LSR - 0010 (11) (3 mode) (3 register)
+            ; register: ASL - ???1, ASR - ???0 (2 size) (1 i/r) (00) (3 register)
+            ; memory: ASL - 0001, ASR - 0000 (11) (3 mode) (3 register)
+            ; register: ROL - ???1, ROR - ???0 (2 size - 00 byte, 01 word, 10 long) (1 i/r) (11) (3 register)
+            ; memory: ROL - 0111, ROR - 0110 (11)(3 mode)(3 register)
+            ; if i/r = 0 -> ??? = rotate count (1-7, 0 = 8), if i/r = 1 -> ??? = data register that contains rotate count
+            
+            ; check digits 9 - 10 _ _ _ _ _ _ _ _ x x - if 11 then memory mode, check 4-8 _ _ _ _ x x x x (001x = LSx, 000x = ASx, 011x = ROx)
+            ; if not then check 12 - 13 _ _ _ _ _ _ _ _ _ _ _ x x _ _ _ - if 01 then LSx, if 00 then ASx, if 11 then ROx
+            
+            MOVE.L      D0,D1           ; copy D0 over to D1
+            ROR.L       #4,D1           ; rotate D1 4 to the right so memory mode indicator in last byte
+            LSR.L       #2,D1           ; shift 2 bits right to get rid of 2 bits on end
+            LSL.L       #2,D1           ; shift 2 bits left to replace them with 0s
+            CMP.B       #$C,D1          ; compare binary 1100 to last byte to see if memory mode
+            BEQ         MEMORY          ; branch to memory if equal
+
+            MOVE.L      D0,D1           ; copy D0 over to D1
+            AND.W       #$18,D1         ; mask all of last word but bits 12 and 13
+            CMP.W       #$18,D1         ; compare binary 00011000 to last word
+            BEQ         REG_ROX         ; go to REG_ROX
+            CMP.W       #$08,D1         ; compare binary 00001000 to last word
+            BEQ         REG_LSX         ; go to REG_LSX
+            CMP.W       #$00,D1         ; compare binary 00000000 to last word
+            BEQ         REG_ASX         ; go to REG_ASX
+            BRA         UNKNOWN         ; go to UNKNOWN
+            
+REG_ROX     MOVE.L      D0,D1
+            ROL.L       #8,D1           ; rotate D1 8 left to get left/right bit on end
+            AND.L       #$0001,D1       ; mask all bits except end bit
+            CMP.B       #$0,D1          ; compare end bit to 0
+            BEQ         REG_ROR         ; go to REG_ROR
+            BRA         REG_ROL         ; go to REG_ROL
+            
+REG_ROR
+
+REG_ROL
+
+REG_LSX     MOVE.L      D0,D1
+            ROL.L       #8,D1           ; rotate D1 8 left to get left/right bit on end
+            AND.L       #$0001,D1       ; mask all bits except end bit
+            CMP.B       #$0,D1          ; compare end bit to 0
+            BEQ         REG_LSR         ; go to REG_LSR
+            BRA         REG_LSL         ; go to REG_LSL
+            
+REG_LSR
+
+REG_LSL
+
+REG_ASX     MOVE.L      D0,D1
+            ROL.L       #8,D1           ; rotate D1 8 left to get left/right bit on end
+            AND.L       #$0001,D1       ; mask all bits except end bit
+            CMP.B       #$0,D1          ; compare end bit to 0
+            BEQ         REG_ASR         ; go to REG_ASR
+            BRA         REG_ASL         ; go to REG_ASL
+            
+REG_ASR
+
+REG_ASL
+            
+MEMORY      MOVE.L      D0,D1           ; copy D0 over to D1
+            ROR.L       #8,D1           ; rotate 8 bits right to isolate bits 4-8 in last byte
+            CMP.B       #$0,D1          ; compare binary 0000 to D1
+            BEQ         MEM_ASR         ; go to MEM_ASR
+            CMP.B       #$1,D1          ; compare binary 0001 to D1
+            BEQ         MEM_ASL         ; go to MEM_ASL
+            CMP.B       #$2,D1          ; compare binary 0010 to D1
+            BEQ         MEM_LSR         ; go to MEM_LSR
+            CMP.B       #$3,D1          ; compare binary 0011 to D1
+            BEQ         MEM_LSL         ; go to MEM_LSL
+            CMP.B       #$6,D1          ; compare binary 0110 to D1
+            BEQ         MEM_ROR         ; go to MEM_ROR
+            CMP.B       #$7,D1          ; compare binary 0111 to D1
+            BEQ         MEM_ROL         ; go to MEM_ROL
+            BRA         UNKNOWN         ; if not equal to any of those then not a known opcode
+
+MEM_ASR
+            
+MEM_ASL
+
+MEM_LSR
+
+MEM_LSL
+
+MEM_ROR
+
+MEM_ROL     
 
 CODE1111    BRA         UNKNOWN         ; not a known opcode
 
-UNKNOWN     MOVE.B      #'D',(A2)+      ; add D to (A2)+ for unknown DATA code
-            MOVE.B      #'A',(A2)+      ; add A to (A2)+ for unknown DATA code
-            MOVE.B      #'T',(A2)+      ; add T to (A2)+ for unknown DATA code
-            MOVE.B      #'A',(A2)+      ; add A to (A2)+ for unknown DATA code
-            MOVE.B      #' ',(A2)+      ; add some spaces for alignment
-            MOVE.B      #' ',(A2)+
-            MOVE.B      #' ',(A2)+
-            MOVE.B      #' ',(A2)+
+UNKNOWN     LEA         DATA,A1         ; load DATA into A1
+            JSR         PRINT
+            ; print some kind of tab for spacing
             MOVE.B      #4,D4           ; add 4 to D4 to go through ASCII loop 4x
             MOVE.L      CURR,A1         ; move curr to A1
             MOVE.L      (A1),D0         ; move data at A1's address to curr
             JSR         ASCII           ; go to ASCII loop to translate code to ASCII and add them to (A2)+
             ; possibly need to add newline (CR,LF) as well
-            BRA         PRINT              ; branch to print unknown line
+            JSR         PRINT              ; branch to print unknown line
 
 EA          ; need to find EA (if any, need to convert rest of memory if any to hex too), add to (A2)+ after converting back to ascii, increment CURR by corresponding amount for opcode + EA
-            BRA         PRINT           ; branch to print results
+            JSR         PRINT           ; branch to print results
+            BRA         NEXT
             
-PRINT       ; need to print (A2)+ which stores all the info but not sure how
-            ; also not sure yet whether to use #13 or #14 FOR TRAP #15
+PRINT       ; not sure yet whether to use #13 or #14 FOR TRAP #15
             MOVE.B      #14,D0          ; move #14 to D0 to print A1
             TRAP        #15             ; print contents of A1 (the contents of one line of memory)
-            BRA         NEXT            ; go back up to next to translate next line of instructions
+            RTS
             
 DONE        ; end of code - need to add something here?
 
@@ -263,6 +347,7 @@ END         DS.L        1               ; reserve long for ending location
 INTRO       DC.B        'Welcome to the MysteryHuskies 68k Disassembler!',CR,LF
             DC.B        'Please enter your desired starting location in 8 digit, upper-case hexadecimal: ',CR,LF,0
 INTRO2      DC.B        'Thank you. Now please enter your desired ending location in 8 digit, upper-case hexadecimal: ',CR,LF,0
+DATA        DC.B        'DATA',0
 ; if time permits should add in some different error messages to display for various types of bad addresses
 
             END         START           ; last line of source
