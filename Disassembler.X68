@@ -1,4 +1,4 @@
-    *-----------------------------------------------------------
+*-----------------------------------------------------------
 * Title      : Final Project
 * Written by : MysteryHuskies
 * Date       : 7/28/21
@@ -200,20 +200,132 @@ OPCODE      ROL.L       #8,D0           ; rotate first 8 bits of op-code to far 
 CODE0000    BRA         UNKNOWN         ; not a known opcode
 
 CODE0001    ; code is MOVE.B
+            LEA MOVEB_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
 
 CODE0010    ; code is MOVE.L or MOVEA.L
+            ; need to distinguish between MOVE.L and MOVEA.L?! they're both 0010
+            MOVE.W  D0,D5   ; move first half of opcode to D5
+            LSL.W   #4,D5   ; logical shift left 4 values over 
+            CMP.W   #$001,D5
+            BEQ MOVEAL_BRA
+            ; if not MOVEA.L, then it's MOVE.L?
+            LEA MOVEL_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
+            
+MOVEAL_BRA   ;MOVEA BRANCH
+            CLR D5 ; clear D5
+            LEA MOVEAL_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
 
 CODE0011    ; code is MOVE.W or MOVEA.W
+            MOVE.W  D0,D5
+            LSL.W   #4,D5
+            CMP.W   #$001,D5
+            BEQ MOVEAW_BRA
+            LEA MOVEW_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
+            
+            
+MOVEAW_BRA  ; move.w branch
+            CLR D5
+            LEA MOVEAW_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
 
 CODE0100    ; code is LEA or NOT or RTS or JSR or NOP or MOVEM
+            MOVE.W  D0,D5
+            LSL.W   #4,D5
+            CMP.W   #$111,D5
+            BEQ LEA_BRA
+            CMP.W   #$0110,D5
+            BEQ NOT_BRA
+            CMP.W   #$0101,D5
+            BEQ RTS_BRA
+            CMP.W   #$010,D5
+            BEQ JSR_BRA
+            CMP.W   #$0001,D5
+            BEQ NOP_BRA
+            ; if we reach the bottom, then we know opcode is MOVEM
+            LSL #6,D5 ; want to compare size value of MOVEM
+            CMP.B   #$00,D5
+            BEQ MOVEM_W_BRA
+            CMP.W   #$01,D5
+            ; if we reach the bottom here, then we know opcdoe is MOVEM.L
+            LEA MOVEM_L_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
+            
+LEA_BRA     ; shouldn't these all be loaded into A1 instead of A6??
+            LEA LEA_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
+
+NOT_BRA
+            LEA NOT_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
+            
+RTS_BRA     LEA RTS_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
+
+JSR_BRA
+            LEA JSR_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
+
+NOP_BRA
+            LEA NOP_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
+
+MOVEM_W_BRA
+            LEA MOVEMW_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15            
 
 CODE0101    BRA         UNKNOWN         ; not a known opcode
 
 CODE0110    ; code is BRA or BGT or BLE or BEQ
+            MOVE.L  D0,D5
+            LSL.L   #8,D5
+            CMP.B   #$00,D5
+            BEQ BRA_BRA
+            CMP.W   #$1111,D5
+            BEQ BLE_BRA
+            CMP.W   #$1110,D5
+            BEQ BGT_BRA
+            ; if we make it all the way to the bottom, then we know that opcode is BEQ
+            
+BRA_BRA
+            LEA BRA_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
+
+BLE_BRA
+            LEA BLE_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
+
+BGT_BRA
+            LEA BGT_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
 
 CODE0111    ; code is MOVEQ
+            LEA MOVEQ_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
 
 CODE1000    ; code is OR
+            LEA OR_DISPLAY,A6
+            MOVE.B  #14,D0
+            TRAP    #15
 
 CODE1001    ; code is SUB
 
@@ -318,7 +430,7 @@ MEM_ROL
 
 CODE1111    BRA         UNKNOWN         ; not a known opcode
 
-UNKNOWN     LEA         DATA,A1         ; load DATA into A1
+UNKNOWN     LEA         DATA_DISPLAY,A1 ; load DATA into A1
             JSR         PRINT
             ; print some kind of tab for spacing
             MOVE.B      #4,D4           ; add 4 to D4 to go through ASCII loop 4x
@@ -347,7 +459,27 @@ END         DS.L        1               ; reserve long for ending location
 INTRO       DC.B        'Welcome to the MysteryHuskies 68k Disassembler!',CR,LF
             DC.B        'Please enter your desired starting location in 8 digit, upper-case hexadecimal: ',CR,LF,0
 INTRO2      DC.B        'Thank you. Now please enter your desired ending location in 8 digit, upper-case hexadecimal: ',CR,LF,0
-DATA        DC.B        'DATA',0
+
+PRINT_TAB   DC.B    '   ',0
+DATA_DISPLAY    DC.B    'DATA',0
+MOVEB_DISPLAY   DC.B    'MOVE.B',0
+MOVEW_DISPLAY   DC.B    'MOVE.W',0
+MOVEL_DISPLAY   DC.B    'MOVE.L',0
+MOVEAW_DISPLAY  DC.B    'MOVE.W',0
+MOVEAL_DISPLAY   DC.B    'MOVEA.L',0
+OR_DISPLAY  DC.B    'OR',0
+LEA_DISPLAY DC.B    'LEA',0
+NOT_DISPLAY DC.B    'NOT',0
+RTS_DISPLAY DC.B    'RTS',0
+JSR_DISPLAY DC.B    'JSR',0
+NOP_DISPLAY DC.B    'NOP',0
+MOVEMW_DISPLAY  DC.B    'MOVEM.W',0
+MOVEM_L_DISPLAY DC.B    'MOVEM.L',0
+BRA_DISPLAY DC.B    'BRA',0
+BLE_DISPLAY DC.B    'BLE',0
+BGT_DISPLAY DC.B    'BGT',0
+MOVEQ_DISPLAY   DC.B    'MOVEQ',0
+
 ; if time permits should add in some different error messages to display for various types of bad addresses
 
             END         START           ; last line of source
