@@ -140,6 +140,7 @@ ASCIIE      CMP.B       #$0E,D1         ; compare $E to D1
 ASCIIF      MOVE.B      #$46,D1         ; replace $F with $46
             BRA         TOBUFFER        ; skip to adding to buffer
             
+; change this to print as you go instead of adding to buffer?
 TOBUFFER    MOVE.B      D1,(A2)+        ; move to buffer
             BRA         ASCII           ; branch back to translate other hex digits if any
             
@@ -200,9 +201,8 @@ OPCODE      ROL.L       #8,D0           ; rotate first 8 bits of op-code to far 
 CODE0000    BRA         UNKNOWN         ; not a known opcode
 
 CODE0001    ; code is MOVE.B
-            LEA MOVEB_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
+            LEA MOVEB_DISPLAY,A1
+            JSR PRINT
 
 CODE0010    ; code is MOVE.L or MOVEA.L
             ; need to distinguish between MOVE.L and MOVEA.L?! they're both 0010
@@ -212,14 +212,12 @@ CODE0010    ; code is MOVE.L or MOVEA.L
             BEQ MOVEAL_BRA
             ; if not MOVEA.L, then it's MOVE.L?
             LEA MOVEL_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
+            JSR PRINT
             
 MOVEAL_BRA   ;MOVEA BRANCH
             CLR D5 ; clear D5
             LEA MOVEAL_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
+            JSR PRINT
 
 CODE0011    ; code is MOVE.W or MOVEA.W
             MOVE.W  D0,D5
@@ -227,15 +225,13 @@ CODE0011    ; code is MOVE.W or MOVEA.W
             CMP.W   #$001,D5
             BEQ MOVEAW_BRA
             LEA MOVEW_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
+            JSR PRINT
             
             
 MOVEAW_BRA  ; move.w branch
             CLR D5
             LEA MOVEAW_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
+            JSR PRINT
 
 CODE0100    ; code is LEA or NOT or RTS or JSR or NOP or MOVEM
             MOVE.W  D0,D5
@@ -257,37 +253,30 @@ CODE0100    ; code is LEA or NOT or RTS or JSR or NOP or MOVEM
             CMP.W   #$01,D5
             ; if we reach the bottom here, then we know opcdoe is MOVEM.L
             LEA MOVEM_L_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
+            JSR PRINT
             
 LEA_BRA     ; shouldn't these all be loaded into A1 instead of A6??
             LEA LEA_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
-
+            JSR PRINT
+            
 NOT_BRA
             LEA NOT_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
+            JSR PRINT
             
 RTS_BRA     LEA RTS_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
+            JSR PRINT
 
 JSR_BRA
             LEA JSR_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
+            JSR PRINT
 
 NOP_BRA
             LEA NOP_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
+            JSR PRINT
 
 MOVEM_W_BRA
             LEA MOVEMW_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15            
+            JSR PRINT            
 
 CODE0101    BRA         UNKNOWN         ; not a known opcode
 
@@ -304,28 +293,23 @@ CODE0110    ; code is BRA or BGT or BLE or BEQ
             
 BRA_BRA
             LEA BRA_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
+            JSR PRINT
 
 BLE_BRA
             LEA BLE_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
+            JSR PRINT
 
 BGT_BRA
             LEA BGT_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
+            JSR PRINT
 
 CODE0111    ; code is MOVEQ
             LEA MOVEQ_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
+            JSR PRINT
 
 CODE1000    ; code is OR
             LEA OR_DISPLAY,A6
-            MOVE.B  #14,D0
-            TRAP    #15
+            JSR PRINT
 
 CODE1001    ; code is SUB
 
@@ -352,10 +336,10 @@ CODE1110    ; comments for reference - can delete later after code is all writte
             
             MOVE.L      D0,D1           ; copy D0 over to D1
             ROR.L       #4,D1           ; rotate D1 4 to the right so memory mode indicator in last byte
-            LSR.L       #2,D1           ; shift 2 bits right to get rid of 2 bits on end
-            LSL.L       #2,D1           ; shift 2 bits left to replace them with 0s
-            CMP.B       #$C,D1          ; compare binary 1100 to last byte to see if memory mode
-            BEQ         MEMORY          ; branch to memory if equal
+;            LSR.L       #2,D1           ; shift 2 bits right to get rid of 2 bits on end
+;            LSL.L       #2,D1           ; shift 2 bits left to replace them with 0s
+;            CMP.B       #$C,D1          ; compare binary 1100 to last byte to see if memory mode
+;            BEQ         MEMORY          ; branch to memory if equal
 
             MOVE.L      D0,D1           ; copy D0 over to D1
             AND.W       #$18,D1         ; mask all of last word but bits 12 and 13
@@ -374,9 +358,123 @@ REG_ROX     MOVE.L      D0,D1
             BEQ         REG_ROR         ; go to REG_ROR
             BRA         REG_ROL         ; go to REG_ROL
             
-REG_ROR
+REG_ROR     MOVE.L      D0,D1           ; move D0 to D1
+            MOVE.L      D0,D2           ; move D0 to D1
+            ROR.L       #6,D1           ; rotate size field to rightmost bits
+            AND.B       #$3,D1          ; mask 2/4 bits of last byte so it's just size field
+            CMP.B       #$0,D1          ; compare binary 00 to last byte
+            BEQ         REG_RORB        ; go to display byte if equal
+            CMP.B       #$1,D1          ; compare binary 01 to last byte
+            BEQ         REG_RORW        ; go to display word if equal
+            BRA         REG_RORL        ; if not then it's a long
 
-REG_ROL
+REG_REST    LEA         PRINT_TAB,A1    ; prepare to print tab
+            JSR         PRINT           ; print
+            MOVE.L      D2,D1           ; move D2 to D1
+            MOVE.L      D2,D3           ; move D2 to D3
+            ROR.L       #8,D1           ; rotate 8 bits right so count/reg in 3/4 rightmost bits
+            ROR.L       #1,D1           ; rotate one more bit right to be 3 leftmost
+            AND.B       #$7,D1          ; mask leftmost bit of rightmost byte of D1 so only count/register readable
+            ROR.L       #4,D3           ; rotate 4 bits right to get 0 _ for i/r in 2 rightmost bits
+            AND.B       #$3,D3          ; mask two leftmost bits of rightmost byte
+            CMP.B       #$2,D3          ; compare binary 10 to to D3
+            CLR.B       D5
+            BEQ         REG_REG         ; go to reg_reg if i/r is 1
+            BRA         REG_VAL         ; go to reg_val if i/r is 0
+            
+REG_REG     CMP.B       #$0,D1          ; compare D1 to 000
+            BEQ         REG_0           ; go to reg_0
+            CMP.B       #$1,D1          ; compare D1 to 001
+            BEQ         REG_1           ; go to reg_1
+            CMP.B       #$2,D1          ; compare D1 to 010
+            BEQ         REG_2           ; go to reg_2
+            CMP.B       #$3,D1          ; compare D1 to 011
+            BEQ         REG_3           ; go to reg_3
+            CMP.B       #$4,D1          ; compare D1 to 100
+            BEQ         REG_4           ; go to reg_4
+            CMP.B       #$5,D1          ; compare D1 to 101
+            BEQ         REG_5           ; go to reg_5
+            CMP.B       #$6,D1          ; compare D1 to 110
+            BEQ         REG_6           ; go to reg_6
+            BRA         REG_7           ; go to reg_7
+    
+REG_0       LEA         D0_DISPLAY,A1   ; load D0 display
+            JSR         PRINT
+            BRA         REG_END
+
+REG_1       LEA         D1_DISPLAY,A1   ; load D1 display
+            JSR         PRINT
+            BRA         REG_END
+
+REG_2       LEA         D2_DISPLAY,A1   ; load D2 display
+            JSR         PRINT
+            BRA         REG_END
+
+REG_3       LEA         D3_DISPLAY,A1   ; load D3 display
+            JSR         PRINT
+            BRA         REG_END
+
+REG_4       LEA         D4_DISPLAY,A1   ; load D4 display
+            JSR         PRINT
+            BRA         REG_END
+
+REG_5       LEA         D5_DISPLAY,A1   ; load D5 display
+            JSR         PRINT
+            BRA         REG_END
+
+REG_6       LEA         D6_DISPLAY,A1   ; load D6 display
+            JSR         PRINT
+            BRA         REG_END
+
+REG_7       LEA         D7_DISPLAY,A1   ; load D7 display
+            JSR         PRINT
+            BRA         REG_END
+
+REG_VAL
+
+REG_END     LEA         PRINT_COMMA,A1  ; load comma display
+            JSR         PRINT
+            MOVE.L      D2,D4           ; copy D2 to D4
+            AND.B       #$7,D4          ; mask leftmost bit of rightmost byte
+            ADD.B       #$1,D5          ; add $1 to D5 to keep track of loop
+            CMP.B       #$1,D5          ; check to see if gone through loop once or twice
+            BEQ         REG_REG         ; go to reg_reg
+            ; not sure whether should go to EA or next, chose next for now
+            BRA         NEXT         
+                 
+REG_RORB    LEA         RORB_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST
+            
+REG_RORW    LEA         RORW_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST      
+       
+REG_RORL    LEA         RORL_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST
+
+REG_ROL     MOVE.L      D0,D1           ; move D0 to D1
+            MOVE.L      D0,D2           ; move D0 to D1
+            ROR.L       #6,D1           ; rotate size field to rightmost bits
+            AND.B       #$3,D1          ; mask 2/4 bits of last byte so it's just size field
+            CMP.B       #$0,D1          ; compare binary 00 to last byte
+            BEQ         REG_ROLB        ; go to display byte if equal
+            CMP.B       #$1,D1          ; compare binary 01 to last byte
+            BEQ         REG_ROLW        ; go to display word if equal
+            BRA         REG_ROLL        ; if not then it's a long
+            
+REG_ROLB    LEA         ROLB_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST
+            
+REG_ROLW    LEA         ROLW_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST      
+       
+REG_ROLL    LEA         ROLL_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST
 
 REG_LSX     MOVE.L      D0,D1
             ROL.L       #8,D1           ; rotate D1 8 left to get left/right bit on end
@@ -385,9 +483,49 @@ REG_LSX     MOVE.L      D0,D1
             BEQ         REG_LSR         ; go to REG_LSR
             BRA         REG_LSL         ; go to REG_LSL
             
-REG_LSR
-
-REG_LSL
+REG_LSR     MOVE.L      D0,D1           ; move D0 to D1
+            MOVE.L      D0,D2           ; move D0 to D1
+            ROR.L       #6,D1           ; rotate size field to rightmost bits
+            AND.B       #$3,D1          ; mask 2/4 bits of last byte so it's just size field
+            CMP.B       #$0,D1          ; compare binary 00 to last byte
+            BEQ         REG_LSRB        ; go to display byte if equal
+            CMP.B       #$1,D1          ; compare binary 01 to last byte
+            BEQ         REG_LSRW        ; go to display word if equal
+            BRA         REG_LSRL        ; if not then it's a long
+            
+REG_LSRB    LEA         LSRB_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST
+            
+REG_LSRW    LEA         LSRW_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST      
+       
+REG_LSRL    LEA         LSRL_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST
+            
+REG_LSL     MOVE.L      D0,D1           ; move D0 to D1
+            MOVE.L      D0,D2           ; move D0 to D1
+            ROR.L       #6,D1           ; rotate size field to rightmost bits
+            AND.B       #$3,D1          ; mask 2/4 bits of last byte so it's just size field
+            CMP.B       #$0,D1          ; compare binary 00 to last byte
+            BEQ         REG_LSLB        ; go to display byte if equal
+            CMP.B       #$1,D1          ; compare binary 01 to last byte
+            BEQ         REG_LSLW        ; go to display word if equal
+            BRA         REG_LSLL        ; if not then it's a long
+            
+REG_LSLB    LEA         LSLB_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST
+            
+REG_LSLW    LEA         LSLW_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST      
+       
+REG_LSLL    LEA         LSLL_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST            
 
 REG_ASX     MOVE.L      D0,D1
             ROL.L       #8,D1           ; rotate D1 8 left to get left/right bit on end
@@ -396,37 +534,78 @@ REG_ASX     MOVE.L      D0,D1
             BEQ         REG_ASR         ; go to REG_ASR
             BRA         REG_ASL         ; go to REG_ASL
             
-REG_ASR
-
-REG_ASL
+REG_ASR     MOVE.L      D0,D1           ; move D0 to D1
+            MOVE.L      D0,D2           ; move D0 to D1
+            ROR.L       #6,D1           ; rotate size field to rightmost bits
+            AND.B       #$3,D1          ; mask 2/4 bits of last byte so it's just size field
+            CMP.B       #$0,D1          ; compare binary 00 to last byte
+            BEQ         REG_ASRB        ; go to display byte if equal
+            CMP.B       #$1,D1          ; compare binary 01 to last byte
+            BEQ         REG_ASRW        ; go to display word if equal
+            BRA         REG_ASRL        ; if not then it's a long
             
-MEMORY      MOVE.L      D0,D1           ; copy D0 over to D1
-            ROR.L       #8,D1           ; rotate 8 bits right to isolate bits 4-8 in last byte
-            CMP.B       #$0,D1          ; compare binary 0000 to D1
-            BEQ         MEM_ASR         ; go to MEM_ASR
-            CMP.B       #$1,D1          ; compare binary 0001 to D1
-            BEQ         MEM_ASL         ; go to MEM_ASL
-            CMP.B       #$2,D1          ; compare binary 0010 to D1
-            BEQ         MEM_LSR         ; go to MEM_LSR
-            CMP.B       #$3,D1          ; compare binary 0011 to D1
-            BEQ         MEM_LSL         ; go to MEM_LSL
-            CMP.B       #$6,D1          ; compare binary 0110 to D1
-            BEQ         MEM_ROR         ; go to MEM_ROR
-            CMP.B       #$7,D1          ; compare binary 0111 to D1
-            BEQ         MEM_ROL         ; go to MEM_ROL
-            BRA         UNKNOWN         ; if not equal to any of those then not a known opcode
-
-MEM_ASR
+REG_ASRB    LEA         ASRB_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST
             
-MEM_ASL
+REG_ASRW    LEA         ASRW_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST      
+       
+REG_ASRL    LEA         ASRL_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST           
+    
+REG_ASL     MOVE.L      D0,D1           ; move D0 to D1
+            MOVE.L      D0,D2           ; move D0 to D1
+            ROR.L       #6,D1           ; rotate size field to rightmost bits
+            AND.B       #$3,D1          ; mask 2/4 bits of last byte so it's just size field
+            CMP.B       #$0,D1          ; compare binary 00 to last byte
+            BEQ         REG_ASLB        ; go to display byte if equal
+            CMP.B       #$1,D1          ; compare binary 01 to last byte
+            BEQ         REG_ASLW        ; go to display word if equal
+            BRA         REG_ASLL        ; if not then it's a long
+            
+REG_ASLB    LEA         ASLB_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST
+            
+REG_ASLW    LEA         ASLW_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST      
+       
+REG_ASLL    LEA         ASLL_DISPLAY,A1 ; load corresponding address
+            JSR         PRINT
+            BRA         REG_REST
+            
+; not sure if we actually need to do this part of ROX/LSX/ASX so going to comment it out for now and possibly work on it later
+;MEMORY      MOVE.L      D0,D1           ; copy D0 over to D1
+;            ROR.L       #8,D1           ; rotate 8 bits right to isolate bits 4-8 in last byte
+;            CMP.B       #$0,D1          ; compare binary 0000 to D1
+;            BEQ         MEM_ASR         ; go to MEM_ASR
+;            CMP.B       #$1,D1          ; compare binary 0001 to D1
+;            BEQ         MEM_ASL         ; go to MEM_ASL
+;            CMP.B       #$2,D1          ; compare binary 0010 to D1
+;            BEQ         MEM_LSR         ; go to MEM_LSR
+;            CMP.B       #$3,D1          ; compare binary 0011 to D1
+;            BEQ         MEM_LSL         ; go to MEM_LSL
+;            CMP.B       #$6,D1          ; compare binary 0110 to D1
+;            BEQ         MEM_ROR         ; go to MEM_ROR
+;            CMP.B       #$7,D1          ; compare binary 0111 to D1
+;            BEQ         MEM_ROL         ; go to MEM_ROL
+;            BRA         UNKNOWN         ; if not equal to any of those then not a known opcode
 
-MEM_LSR
+;MEM_ASR     MOVE.L      D0,D1           ; move D0 to D1
+            
+;MEM_ASL     MOVE.L      D0,D1           ; move D0 to D1
 
-MEM_LSL
+;MEM_LSR     MOVE.L      D0,D1           ; move D0 to D1
 
-MEM_ROR
+;MEM_LSL     MOVE.L      D0,D1           ; move D0 to D1
 
-MEM_ROL     
+;MEM_ROR     MOVE.L      D0,D1           ; move D0 to D1
+
+;MEM_ROL     MOVE.L      D0,D1           ; move D0 to D1
 
 CODE1111    BRA         UNKNOWN         ; not a known opcode
 
@@ -461,6 +640,7 @@ INTRO       DC.B        'Welcome to the MysteryHuskies 68k Disassembler!',CR,LF
 INTRO2      DC.B        'Thank you. Now please enter your desired ending location in 8 digit, upper-case hexadecimal: ',CR,LF,0
 
 PRINT_TAB   DC.B    '   ',0
+PRINT_COMMA DC.B    ',',0
 DATA_DISPLAY    DC.B    'DATA',0
 MOVEB_DISPLAY   DC.B    'MOVE.B',0
 MOVEW_DISPLAY   DC.B    'MOVE.W',0
@@ -479,6 +659,48 @@ BRA_DISPLAY DC.B    'BRA',0
 BLE_DISPLAY DC.B    'BLE',0
 BGT_DISPLAY DC.B    'BGT',0
 MOVEQ_DISPLAY   DC.B    'MOVEQ',0
+RORB_DISPLAY    DC.B    'ROR.B',0
+ROLB_DISPLAY    DC.B    'ROL.B',0
+RORW_DISPLAY    DC.B    'ROR.W',0
+ROLW_DISPLAY    DC.B    'ROL.W',0
+RORL_DISPLAY    DC.B    'ROR.L',0
+ROLL_DISPLAY    DC.B    'ROL.L',0
+LSRB_DISPLAY    DC.B    'LSR.B',0
+LSLB_DISPLAY    DC.B    'LSL.B',0
+LSRW_DISPLAY    DC.B    'LSR.W',0
+LSLW_DISPLAY    DC.B    'LSL.W',0
+LSRL_DISPLAY    DC.B    'LSR.L',0
+LSLL_DISPLAY    DC.B    'LSL.L',0
+ASRB_DISPLAY    DC.B    'ASR.B',0
+ASLB_DISPLAY    DC.B    'ASL.B',0
+ASRW_DISPLAY    DC.B    'ASR.W',0
+ASLW_DISPLAY    DC.B    'ASL.W',0
+ASRL_DISPLAY    DC.B    'ASR.L',0
+ASLL_DISPLAY    DC.B    'ASL.L',0
+D0_DISPLAY      DC.B    'D0',0
+D1_DISPLAY      DC.B    'D1',0
+D2_DISPLAY      DC.B    'D2',0
+D3_DISPLAY      DC.B    'D3',0
+D4_DISPLAY      DC.B    'D4',0
+D5_DISPLAY      DC.B    'D5',0
+D6_DISPLAY      DC.B    'D6',0
+D7_DISPLAY      DC.B    'D7',0
+A0_DISPLAY      DC.B    'A0',0
+A1_DISPLAY      DC.B    'A1',0
+A2_DISPLAY      DC.B    'A2',0
+A3_DISPLAY      DC.B    'A3',0
+A4_DISPLAY      DC.B    'A4',0
+A5_DISPLAY      DC.B    'A5',0
+A6_DISPLAY      DC.B    'A6',0
+A7_DISPLAY      DC.B    'A7',0
+DISPLAY_$1       DC.B    '#$1',0
+DISPLAY_$2       DC.B    '#$2',0
+DISPLAY_$3       DC.B    '#$3',0
+DISPLAY_$4       DC.B    '#$4',0
+DISPLAY_$5       DC.B    '#$5',0
+DISPLAY_$6       DC.B    '#$6',0
+DISPLAY_$7       DC.B    '#$7',0
+DISPLAY_$8       DC.B    '#$8',0
 
 ; if time permits should add in some different error messages to display for various types of bad addresses
 
