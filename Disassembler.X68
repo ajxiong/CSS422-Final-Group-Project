@@ -201,8 +201,205 @@ OPCODE      ROL.L       #8,D0           ; rotate first 8 bits of op-code to far 
 CODE0000    BRA         UNKNOWN         ; not a known opcode
 
 CODE0001    ; code is MOVE.B
-            LEA MOVEB_DISPLAY,A1
+            MOVE.L      D0,D1           ; move D0 to D1 to copy
+            MOVE.L      D0,D2           ; move D0 to D2 to copy
+            MOVE.L      D0,D3           ; move D0 to D3 to copy
+            CLR.L       D5
+            LEA         MOVEB_DISPLAY,A1
+            JSR         PRINT
+            LEA         PRINT_TAB,A1
+            JSR         PRINT
+            ROR.L       #$2,D1          ; rotate two bits right
+            ROR.L       #$1,D1          ; rotate one more bit right
+            AND.B       #$7,D1          ; mask leftmost bit of rightmost byte of D1
+            CMP.B       #$0,D1          ; compare binary 000 to D1
+            BEQ         MOVEB_DN_MODE     ; go to MOVEB_DN_MODE
+            CMP.B       #$1,D1          ; compare binary 001 to D1
+            BEQ         MOVEB_AN_MODE         ; go to MOVEB_AN_MODE
+            CMP.B       #$2,D1          ; compare binary 010 to D1
+            BEQ         MOVEB_AN_P_MODE       ; go to MOVEB_AN_P_MODE
+            CMP.B       #$3,D1          ; compare binary 011 to D1
+            BEQ         MOVEB_AN_P_P_MODE     ; go to MOVEB_AN_P_P_MODE
+            CMP.B       #$4,D1          ; compare binary 100 to D1
+            BEQ         MOVEB_AN_P_M_MODE     ; go to MOVEB_P_M_MODE
+            BRA         MOVEB_OTHER_MODE      ; go to MOVEB_OTHER_MODE
+MOVEB_DEST  LEA         PRINT_COMMA,A1  ; print comma
+            MOVE.B      #$1,D5          ; keep track of whether on source or destination
+            JSR         PRINT
+            MOVE.L      D3,D1           ; move D3 to D1 to copy
+            MOVE.L      D3,D2           ; move D3 to D1 to copy
+            ROR.L       #$4,D1          ; getting source mode
+            ROR.L       #$2,D1
+            AND.B       #$7,D1
+            ROR.L       #$8,D2          ; getting source register
+            ROR.L       #$1,D2 
+            AND.B       #$7,D2
+            CMP.B       #$0,D1          ; compare binary 000 to D1
+            BEQ         MOVEB_DN_MODE     ; go to MOVEB_DN_MODE
+            CMP.B       #$1,D1          ; compare binary 001 to D1
+            BEQ         MOVEB_AN_MODE         ; go to MOVEB_AN_MODE
+            CMP.B       #$2,D1          ; compare binary 010 to D1
+            BEQ         MOVEB_AN_P_MODE       ; go to MOVEB_AN_P_MODE
+            CMP.B       #$3,D1          ; compare binary 011 to D1
+            BEQ         MOVEB_AN_P_P_MODE     ; go to MOVEB_AN_P_P_MODE
+            CMP.B       #$4,D1          ; compare binary 100 to D1
+            BEQ         MOVEB_AN_P_M_MODE     ; go to MOVEB_P_M_MODE
+            BRA         MOVEB_OTHER_MODE      ; go to MOVEB_OTHER_MODE    
+
+MOVEB_DN_MODE   JSR     DN_MODE
+                CMP.B   #$1,D5
+                BEQ     NEXT
+                BRA     MOVEB_DEST
+
+MOVEB_AN_MODE   JSR     AN_MODE
+                CMP.B   #$1,D5
+                BEQ     NEXT
+                BRA     MOVEB_DEST
+
+MOVEB_AN_P_MODE JSR     AN_P_MODE
+                CMP.B   #$1,D5
+                BEQ     NEXT
+                BRA     MOVEB_DEST
+
+MOVEB_AN_P_P_MODE   JSR AN_P_P_MODE
+                    CMP.B   #$1,D5
+                    BEQ     NEXT
+                    BRA MOVEB_DEST
+
+MOVEB_AN_P_M_MODE   JSR AN_P_M_MODE
+                    CMP.B   #$1,D5
+                    BEQ     NEXT
+                    BRA MOVEB_DEST
+
+MOVEB_OTHER_MODE    ; still need to do this part
+            
+            
+DN_MODE     AND.B       #$7,D2          ; mask leftmost bit of rightmost byte of D2
+            CMP.B       #$0,D2          ; compare binary 000 to D2
+            BEQ         DN_0            ; go to DN_0
+            CMP.B       #$1,D2          ; compare binary 001 to D2
+            BEQ         DN_1            ; go to DN_1
+            CMP.B       #$2,D2          ; compare binary 010 to D2
+            BEQ         DN_2            ; go to DN_2
+            CMP.B       #$3,D2          ; compare binary 011 to D2
+            BEQ         DN_3            ; go to DN_3
+            CMP.B       #$4,D2          ; compare binary 100 to D2
+            BEQ         DN_4            ; go to DN_4
+            CMP.B       #$5,D2          ; compare binary 101 to D2
+            BEQ         DN_5            ; go to DN_5
+            CMP.B       #$6,D2          ; compare binary 110 to D2
+            BEQ         DN_6            ; go to DN_6
+            CMP.B       #$7,D2          ; compare binary 111 to D2
+            BEQ         DN_7            ; go to DN_7
+            
+DN_0        LEA         D0_DISPLAY,A1   ; load message
+            JSR         PRINT
+            RTS
+
+DN_1        LEA         D1_DISPLAY,A1   ; load message
+            JSR         PRINT
+            RTS
+
+DN_2        LEA         D2_DISPLAY,A1   ; load message
+            JSR         PRINT
+            RTS
+
+DN_3        LEA         D3_DISPLAY,A1
+            JSR         PRINT
+            RTS
+
+DN_4        LEA         D4_DISPLAY,A1
+            JSR         PRINT
+            RTS
+
+DN_5        LEA         D5_DISPLAY,A1
+            JSR         PRINT
+            RTS
+
+DN_6        LEA         D6_DISPLAY,A1
+            JSR         PRINT
+            RTS
+
+DN_7        LEA         D7_DISPLAY,A1
+            JSR         PRINT
+            RTS
+
+AN_MODE     AND.B       #$7,D2          ; mask leftmost bit of rightmost byte of D2
+            CMP.B       #$0,D2          ; compare binary 000 to D2
+            BEQ         AN_0            ; go to AN_0
+            CMP.B       #$1,D2          ; compare binary 001 to D2
+            BEQ         AN_1            ; go to AN_1
+            CMP.B       #$2,D2          ; compare binary 010 to D2
+            BEQ         AN_2            ; go to AN_2
+            CMP.B       #$3,D2          ; compare binary 011 to D2
+            BEQ         AN_3            ; go to AN_3
+            CMP.B       #$4,D2          ; compare binary 100 to D2
+            BEQ         AN_4            ; go to AN_4
+            CMP.B       #$5,D2          ; compare binary 101 to D2
+            BEQ         AN_5            ; go to AN_5
+            CMP.B       #$6,D2          ; compare binary 110 to D2
+            BEQ         AN_6            ; go to AN_6
+            CMP.B       #$7,D2          ; compare binary 111 to D2
+            BEQ         AN_7            ; go to AN_7
+            
+AN_0        LEA         A0_DISPLAY,A1   ; load message
+            JSR         PRINT
+            RTS
+
+AN_1        LEA         A1_DISPLAY,A1   ; load message
+            JSR         PRINT
+            RTS
+
+AN_2        LEA         A2_DISPLAY,A1   ; load message
+            JSR         PRINT
+            RTS
+
+AN_3        LEA         A3_DISPLAY,A1
+            JSR         PRINT
+            RTS
+
+AN_4        LEA         A4_DISPLAY,A1
+            JSR         PRINT
+            RTS
+
+AN_5        LEA         A5_DISPLAY,A1
+            JSR         PRINT
+            RTS
+
+AN_6        LEA         A6_DISPLAY,A1
+            JSR         PRINT
+            RTS
+
+AN_7        LEA         A7_DISPLAY,A1
+            JSR         PRINT
+            RTS          
+
+AN_P_MODE   LEA     PRINT_LPAR,A1       ; load string to print left paren
+            JSR     PRINT
+            JSR     AN_MODE             ; print address register between parens
+            LEA     PRINT_RPAR,A1       ; load string to print right paren
+            JSR     PRINT
+            RTS
+
+AN_P_P_MODE LEA PRINT_LPAR,A1
             JSR PRINT
+            JSR AN_MODE
+            LEA PRINT_RPAR,A1
+            JSR PRINT
+            LEA PRINT_PLUS,A1
+            JSR PRINT
+            RTS
+
+AN_P_M_MODE LEA PRINT_MINUS,A1
+            JSR PRINT
+            LEA PRINT_LPAR,A1
+            JSR PRINT
+            JSR AN_MODE
+            LEA PRINT_RPAR,A1
+            JSR PRINT
+            RTS
+
+OTHER_MODE  ; still need to do this part
 
 CODE0010    ; code is MOVE.L or MOVEA.L
             ; need to distinguish between MOVE.L and MOVEA.L?! they're both 0010
@@ -213,11 +410,13 @@ CODE0010    ; code is MOVE.L or MOVEA.L
             ; if not MOVEA.L, then it's MOVE.L?
             LEA MOVEL_DISPLAY,A6
             JSR PRINT
+            ; use AN_MODE / DN_MODE / etc. subroutines up above to save time/effort
             
 MOVEAL_BRA   ;MOVEA BRANCH
             CLR D5 ; clear D5
             LEA MOVEAL_DISPLAY,A6
             JSR PRINT
+            ; use AN_MODE / DN_MODE / etc. subroutines up above to save time/effort
 
 CODE0011    ; code is MOVE.W or MOVEA.W
             MOVE.W  D0,D5
@@ -226,12 +425,13 @@ CODE0011    ; code is MOVE.W or MOVEA.W
             BEQ MOVEAW_BRA
             LEA MOVEW_DISPLAY,A6
             JSR PRINT
-            
+            ; use AN_MODE / DN_MODE / etc. subroutines up above to save time/effort
             
 MOVEAW_BRA  ; move.w branch
             CLR D5
             LEA MOVEAW_DISPLAY,A6
             JSR PRINT
+            ; use AN_MODE / DN_MODE / etc. subroutines up above to save time/effort
 
 CODE0100    ; code is LEA or NOT or RTS or JSR or NOP or MOVEM
             MOVE.W  D0,D5
@@ -254,10 +454,12 @@ CODE0100    ; code is LEA or NOT or RTS or JSR or NOP or MOVEM
             ; if we reach the bottom here, then we know opcdoe is MOVEM.L
             LEA MOVEM_L_DISPLAY,A6
             JSR PRINT
+            ; use AN_MODE / DN_MODE / etc. subroutines up above to save time/effort
             
 LEA_BRA     ; shouldn't these all be loaded into A1 instead of A6??
             LEA LEA_DISPLAY,A6
             JSR PRINT
+            ; use AN_MODE / DN_MODE / etc. subroutines up above to save time/effort
             
 NOT_BRA
             LEA NOT_DISPLAY,A6
@@ -276,7 +478,8 @@ NOP_BRA
 
 MOVEM_W_BRA
             LEA MOVEMW_DISPLAY,A6
-            JSR PRINT            
+            JSR PRINT 
+            ; use AN_MODE / DN_MODE / etc. subroutines up above to save time/effort           
 
 CODE0101    BRA         UNKNOWN         ; not a known opcode
 
@@ -306,6 +509,7 @@ BGT_BRA
 CODE0111    ; code is MOVEQ
             LEA MOVEQ_DISPLAY,A6
             JSR PRINT
+            ; use AN_MODE / DN_MODE / etc. subroutines up above to save time/effort
 
 CODE1000    ; code is OR
             LEA OR_DISPLAY,A6
@@ -641,6 +845,10 @@ INTRO2      DC.B        'Thank you. Now please enter your desired ending locatio
 
 PRINT_TAB   DC.B    '   ',0
 PRINT_COMMA DC.B    ',',0
+PRINT_PLUS  DC.B    '+',0
+PRINT_MINUS DC.B    '-',0
+PRINT_LPAR  DC.B    '(',0
+PRINT_RPAR  DC.B    ')',0
 DATA_DISPLAY    DC.B    'DATA',0
 MOVEB_DISPLAY   DC.B    'MOVE.B',0
 MOVEW_DISPLAY   DC.B    'MOVE.W',0
