@@ -2,6 +2,13 @@
 * Title      : Main File
 *-----------------------------------------------------------
     ORG $1000
+    JMP     MAIN                        ; SKIP TEXT
+    BHI     MAIN                        ; SKIP TEXT
+    ASR.B   #1, D0
+    ASR.W   #1, D0
+    ASR.L   #1, D0
+    ASR.L   D0
+    NOP                                 ; TEST
 MAIN:
     MOVEA.L #$00100000,SP
     
@@ -29,8 +36,10 @@ MAINOK0:
     JSR     io_badorder                 ; IF START > END SHOW MESSAGE AND REPEAT
     JMP     MAINLOOP
 MAINOK1:
-    MOVE.L  D1,(addrend)              ; SAVE START ADDRRESS
-    MOVE.L  (addrstart),(addrnext)    ; SET POINTER TO START ADDRESS
+
+    MOVE.L  D1,(addrend)                ; SAVE START ADDRESS
+    MOVE.L  (addrstart),(addrnext)      ; SET POINTER TO START ADDRESS
+    MOVE.W  #30,(linecnt0)              ; SET linecnt0
 
     
 MAINLOOP02:
@@ -47,6 +56,13 @@ MAINLOOP02:
     JSR     io_showdata
     
 MAINLOOP02NEXT:
+    SUBI.W  #1,linecnt0
+    BNE     MAINLOOP02NEXT2
+    JSR     io_waitcr
+    MOVE.W  #30,(linecnt0)              ; SET linecnt0
+    
+    
+MAINLOOP02NEXT2:
     JSR     io_printnewline
     MOVE.L  (addrend),D0                ; LOAD CURRENT POINTER
     CMP.L   (addrnext),D0               ; CHECK FOR END

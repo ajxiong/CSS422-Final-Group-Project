@@ -1,4 +1,10 @@
         
+io_waitcr:
+    MOVE    #5,D0               ; READ ASCII KEY
+    TRAP    #15                 ;
+    CMP.B   #13,D1              ; COMPARE WITH CR
+    BNE     io_waitcr           ; REPEAT IF NOT 
+    RTS
     ;SUBROUTINE: io_showdata -----------------------------------------
     ;   SHOW WELCOME MESSAGE
     ;-----------------------------------------------------------------
@@ -46,7 +52,7 @@ io_printhexlLOOP:
     RTS                         ; RETURN
     
     ;SUBROUTINE: io_showmsgbadaddr01----------------------------------
-    ;   SHOW WELCOME MESSAGE
+    ;   SHOW BAD ADDRESS01 MESSAGE
     ;-----------------------------------------------------------------
 io_showmsgbadaddr01:
     LEA     msgbadaddr01, A1    ; LOAD STRING ADDRESS
@@ -56,10 +62,19 @@ io_showmsgbadaddr01:
     rts                         ; RETURN
         
     ;SUBROUTINE: io_printnewline--------------------------------------
-    ;   SHOW WELCOME MESSAGE
+    ;   SHOW NEW LINE
     ;-----------------------------------------------------------------
 io_printnewline:
     LEA     NEWLINE, A1         ; LOAD STRING ADDRESS
+    MOVE    #14,D0              ; PRINT STRING
+    TRAP    #15                 ; TRAP 15
+    RTS                         ; RETURN
+        
+    ;SUBROUTINE: io_printspaces4--------------------------------------
+    ;   SHOW 4 SPACES
+    ;-----------------------------------------------------------------
+io_printspaces4:
+    LEA     SPACES4, A1         ; LOAD STRING ADDRESS
     MOVE    #14,D0              ; PRINT STRING
     TRAP    #15                 ; TRAP 15
     RTS                         ; RETURN
@@ -225,6 +240,7 @@ io_read_address_ok:
     MOVE.L  (SP)+,D5            ; RESTORE D5
     MOVE.L  (SP)+,D4            ; RESTORE D4
     RTS                         ; RETURN
+
 
 
 

@@ -6,7 +6,13 @@ addrnext:           ds.l    1                       ; POINTER TO NEXT DISASSEMBL
 
 
 
-strtmp01:           DS.L    81                      ; TEMPORAL STRING
+strtmp01:           DS.B    81                      ; TEMPORAL STRING
+linecnt0:           DS.W    1                       ; CURRENT SCREEN LINE COUNTER
+
+
+opvalue:            DS.W    1                       ; CURRENT OPCODE
+opcodtptr:          DS.L    1                       ; POINTER OPCODETABLE
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
