@@ -263,6 +263,69 @@ opcode_sz3:
     RTS                                         ;RETURN
 
     ; EXTRACT FIELD Dn FROM BITS 11:9 AND SET INTO OPERAND 1
+opcode_rlmop1:
+    MOVEM.L D2-D5,-(SP)                         ; SAVE REGISTERS
+    
+    MOVE.L  addrnext,A0                         ; LOAD POINTER TO NEXT DATA
+    MOVE.W  (A0)+,D2                            ; LOAD 16 BIT REGISTER LIST
+    MOVE.L  A0,addrnext                         ; SAVE READ POINTER
+    
+    MOVE.W  opvalue,D0                          ; LOAD INSTRUCTION
+    ANDI.W  #$38,D0                             ; MASK M EA FIELD
+    CMP.B   #$20,D0                             ; PREDECREMENT?
+    BEQ     opcode_rlmop1PRDEC
+    
+    MOVE.L  #$0001,D3                           ;
+    MOVE.L  #15,D4                              ;
+    JMP     opcode_rlmop1BLD                    ;
+    
+opcode_rlmop1PRDEC:
+    
+    MOVE.L  #$8000,D3                           ;
+    MOVE.L  #1,D4                               ;
+
+opcode_rlmop1BLD:
+
+    LEA     str1tmpop,A0                        ;    
+
+    MOVE.B #8,D5                                ;
+opcode_rlmop1PRDECLOOP1:
+    MOVE.W  D2,D0                               ;
+    AND.W   D3,D0                               ;
+    BEQ     opcode_rlmop1PRDECLOOP1dec          ;
+    MOVE.B  #'8',D0                             ;
+    SUB.B   D5,D0                               ;
+    MOVE.B   #'D',(A0)+                         ;
+    MOVE.B   D0,(A0)+                           ;
+    MOVE.B   #'/',(A0)+                         ;
+opcode_rlmop1PRDECLOOP1dec:
+    ROR.W   D4,D3                               ; ROTATE MASK
+    SUBQ.B  #1,D5                               ; DECREMENT COUNTER
+    BNE     opcode_rlmop1PRDECLOOP1             ; REPEAT IF NOT ZERO
+
+    MOVE.B #8,D5                                ;
+opcode_rlmop1PRDECLOOP2:
+    MOVE.W  D2,D0                               ;
+    AND.W   D3,D0                               ;
+    BEQ     opcode_rlmop1PRDECLOOP2dec          ;
+    MOVE.B  #'8',D0                             ;
+    SUB.B   D5,D0                               ;
+    MOVE.B   #'A',(A0)+                         ;
+    MOVE.B   D0,(A0)+                           ;
+    MOVE.B   #'/',(A0)+                         ;
+opcode_rlmop1PRDECLOOP2dec:
+    ROR.W   D4,D3                               ; ROTATE MASK
+    SUBQ.B  #1,D5                               ; DECREMENT COUNTER
+    BNE     opcode_rlmop1PRDECLOOP2             ; REPEAT IF NOT ZERO
+
+    MOVE.B   #0,-1(A0)
+    
+    
+    MOVEM.L (SP)+,D2-D5                         ; RESTORE REGISTERS
+    RTS                                         ;RETURN
+    
+
+    ; EXTRACT FIELD Dn FROM BITS 11:9 AND SET INTO OPERAND 1
 opcode_immdn1op1:
     MOVE.W  opvalue,D0                          ; LOAD INSTRUCTION
     ANDI.W  #$20,D0                             ; CHECK MODE IMMEDIATE/REGISTER
@@ -385,177 +448,6 @@ opcode_ea2op1:
     ADDQ.L  #6,SP                               ; FREE SPACE PARAMETERS
     RTS
 
-    ; EXTRACT EA FROM BITS 5:0
-opcode_ea:
-    MOVE.W  8(SP),D0                            ; LOAD EA
-    LSR.B   #3,D0                               ; EXTRACT M FIELD
-    ANDI.L  #7,D0                               ; EXTRACT M FIELD
-    MULU    #6,D0                               ; SIZE OF JMP XXXXXXX
-    LEA     opcode_ea1op2JMPTBL,A0              ; LOAD JUMP TABLE BASE ADDRESS
-    JMP     0(A0,D0)                            ; JUMP TO TABLE ENTRY
-    
-opcode_ea1op2JMPTBL:
-    JMP     opcode_ea1op2JMP000
-    JMP     opcode_ea1op2JMP001
-    JMP     opcode_ea1op2JMP010
-    JMP     opcode_ea1op2JMP011
-    JMP     opcode_ea1op2JMP100
-    JMP     opcode_ea1op2JMP101
-    JMP     opcode_ea1op2JMP110
-    JMP     opcode_ea1op2JMP111
-opcode_ea1op2JMPEND:
-    RTS                                         ;RETURN
-    
-    ; EA Dn
-opcode_ea1op2JMP000:
-    MOVE.L  4(SP),A1                            ; STRING POINTER
-    MOVE.B  #'D',(A1)+                          ; SET 'A'
-    MOVE.W  8(SP),D0                            ; LOAD EA
-    ANDI.L  #7,D0                               ; EXTRACT BITS 2:0
-    ADDI.B  #'0',D0                             ; CONVERT TO ASCII
-    MOVE.B  D0,(A1)+                            ; SET NUMBER
-    MOVE.B  #0,(A1)+                            ; SET END OF STRING
-    JMP     opcode_ea1op2JMPEND                 ; BACK TO TABLE END
-
-    ; EA An
-opcode_ea1op2JMP001:
-    MOVE.L  4(SP),A1                            ; STRING POINTER
-    MOVE.B  #'A',(A1)+                          ; SET 'A'
-    MOVE.W  8(SP),D0                            ; LOAD EA
-    ANDI.L  #7,D0                               ; EXTRACT BITS 2:0
-    ADDI.B  #'0',D0                             ; CONVERT TO ASCII
-    MOVE.B  D0,(A1)+                            ; SET NUMBER
-    MOVE.B  #0,(A1)+                            ; SET END OF STRING
-    JMP     opcode_ea1op2JMPEND                 ; BACK TO TABLE END
-
-    ; EA (An)
-opcode_ea1op2JMP010:
-    MOVE.L  4(SP),A1                            ; STRING POINTER
-    MOVE.W  8(SP),D0                            ; LOAD EA
-    JSR     opcode_PanP                         ; APPEND (An)
-    JMP     opcode_ea1op2JMPEND                 ; BACK TO TABLE END
-
-    ; EA (An)+
-opcode_ea1op2JMP011:
-    MOVE.L  4(SP),A1                            ; STRING POINTER
-    MOVE.W  8(SP),D0                            ; LOAD EA
-    JSR     opcode_PanP                         ; APPEND (An)
-    MOVE.B  #'+',-1(A1)                         ; SET '+'
-    MOVE.B  #0,(A1)+                            ; SET END OF STRING
-    JMP     opcode_ea1op2JMPEND                 ; BACK TO TABLE END
-
-    ; EA -(An)
-opcode_ea1op2JMP100:
-    MOVE.L  4(SP),A1                            ; STRING POINTER
-    MOVE.W  8(SP),D0                            ; LOAD EA
-    MOVE.B  #'-',(A1)+                          ; SET '-'
-    JSR     opcode_PanP                         ; APPEND (An)
-    JMP     opcode_ea1op2JMPEND                 ; BACK TO TABLE END
-
-    ; EA $DISP(An)
-opcode_ea1op2JMP101:
-    MOVE.L  addrnext,A0                         ; LOAD POINTER TO NEXT DATA
-    MOVE.W  (A0)+,D1                            ; LOAD 16 BIT DISPLACEMENT
-    MOVE.L  A0,addrnext                         ; SAVE READ POINTER
-    
-    MOVE.L  4(SP),A1                            ; STRING POINTER
-    MOVE.W  #4,-(SP)                            ; NUMBER OF DIGIT TO SHOW
-    JSR     opcode_tohex                        ;
-    ADDA.L  #2,SP                               ; FREE PARAMETERS
-
-    MOVE.L  4(SP),A1                            ; STRING POINTER
-    ADDA.L  #5,A1                               ; STRING POINTER
-    MOVE.W  8(SP),D0                            ; LOAD EA
-    JSR     opcode_PanP                         ; APPEND (An)
-    JMP     opcode_ea1op2JMPEND                 ; BACK TO TABLE END
-
-    ; EA (d8, An, Xn)
-opcode_ea1op2JMP110:
-    ADDQ.L  #2,addrnext                         ; INCREMENT READ POINTER TO SKIP Brief Extension Word
-    JMP     opcode_ea1op2JMPEND                 ; BACK TO TABLE END
-
-    ; EA OTHERS
-opcode_ea1op2JMP111:
-    MOVE.W  8(SP),D0                            ; LOAD EA
-    ANDI.L  #7,D0                               ; EXTRACT Xn FIELD
-    MULU    #6,D0                               ; SIZE OF JMP XXXXXXX
-    LEA     opcode_ea1op2JM2TBL,A0              ; LOAD JUMP TABLE BASE ADDRESS
-    JMP     0(A0,D0)                            ; JUMP TO TABLE ENTRY
-opcode_ea1op2JM2TBL:
-    JMP     opcode_ea1op2JM2000
-    JMP     opcode_ea1op2JM2001
-    JMP     opcode_ea1op2JM2010
-    JMP     opcode_ea1op2JM2011
-    JMP     opcode_ea1op2JM2100
-    JMP     opcode_ea1op2JM2101
-    JMP     opcode_ea1op2JM2110
-    JMP     opcode_ea1op2JM2111
-opcode_ea1op2JM2END:
-    JMP     opcode_ea1op2JMPEND                 ; BACK TO TABLE END
-
-    ; EA Absolute Short
-opcode_ea1op2JM2000:
-    MOVE.L  addrnext,A0                         ; LOAD POINTER TO NEXT DATA
-    MOVE.W  (A0)+,D1                            ; LOAD 16 BIT DISPLACEMENT
-    MOVE.L  A0,addrnext                         ; SAVE READ POINTER
-    
-    MOVE.L  4(SP),A1                            ; STRING POINTER
-    MOVE.W  #4,-(SP)                            ; NUMBER OF DIGIT TO SHOW
-    JSR     opcode_tohex                        ;
-    ADDA.L  #2,SP                               ; FREE PARAMETERS
-    JMP     opcode_ea1op2JM2END                 ; BACK TO TABLE END
-
-    ; EA Absolute Long
-opcode_ea1op2JM2001:
-    MOVE.L  addrnext,A0                         ; LOAD POINTER TO NEXT DATA
-    MOVE.L  (A0)+,D1                            ; LOAD 32 BIT DISPLACEMENT
-    MOVE.L  A0,addrnext                         ; SAVE READ POINTER
-    
-    MOVE.L  4(SP),A1                            ; STRING POINTER
-    MOVE.W  #8,-(SP)                            ; NUMBER OF DIGIT TO SHOW
-    JSR     opcode_tohex                        ;
-    ADDA.L  #2,SP                               ; FREE PARAMETERS
-    JMP     opcode_ea1op2JM2END                 ; BACK TO TABLE END
-
-opcode_ea1op2JM2010:
-    ADDQ.L  #2,addrnext                         ; INCREMENT READ POINTER TO SKIP Brief Extension Word
-    JMP     opcode_ea1op2JM2END                 ; BACK TO TABLE END
-
-opcode_ea1op2JM2011:
-    ADDQ.L  #2,addrnext                         ; INCREMENT READ POINTER TO SKIP Brief Extension Word
-    JMP     opcode_ea1op2JM2END                 ; BACK TO TABLE END
-
-    ; EA #IMM
-opcode_ea1op2JM2100:
-    CMP.L   #2,opsize01
-    BLE     LOAD_IMM16
-    MOVE.L  addrnext,A0                         ; LOAD POINTER TO NEXT DATA
-    MOVE.L  (A0)+,D1                            ; LOAD 32 BIT IMMEDIATE
-    MOVE.L  A0,addrnext                         ; SAVE READ POINTER
-    BRA     LOADED_IMM
-LOAD_IMM16:
-    MOVE.L  addrnext,A0                         ; LOAD POINTER TO NEXT DATA
-    MOVE.W  (A0)+,D1                            ; LOAD 16 BIT IMMEDIATE
-    MOVE.L  A0,addrnext                         ; SAVE READ POINTER
-LOADED_IMM:
-    MOVE.L  4(SP),A1                            ; STRING POINTER
-    MOVE.B  #'#',(A1)+                          ; SET '+'
-    MOVE.L  opsize01, D0                        ; LOAD OPERAND SIZE IN BYTE
-    ADD.L   D0,D0                               ; MULTIPLY X 2 TO MAKE DIGIT COUNT
-    MOVE.W  D0,-(SP)                            ; NUMBER OF DIGIT TO SHOW
-    JSR     opcode_tohex                        ;
-    ADDA.L  #2,SP                               ; FREE PARAMETERS
-    JMP     opcode_ea1op2JM2END                 ; BACK TO TABLE END
-
-opcode_ea1op2JM2101:
-    JMP     opcode_ea1op2JM2END                 ; BACK TO TABLE END
-
-opcode_ea1op2JM2110:
-    JMP     opcode_ea1op2JM2END                 ; BACK TO TABLE END
-
-opcode_ea1op2JM2111:
-    JMP     opcode_ea1op2JM2END                 ; BACK TO TABLE END
-
     
     ; REORDER OPERAND USING BIT 7(1=Register to memory)
 opcode_dir0:
@@ -570,10 +462,20 @@ opcode_dir0_rev:
     ; REORDER OPERAND USING BIT 8(1=<ea> ♦ Dn → <ea>)
 opcode_dir1:
     MOVE.W  opvalue,D0                          ; LOAD CURRENT INSTRUCTION
-    ANDI.W  #256,D0                             ; TEST BIT 7
+    ANDI.W  #256,D0                             ; TEST BIT 8
     BEQ     opcode_dir1_rev                     ; IF 0 REVERT
     RTS                                         ;RETURN
 opcode_dir1_rev:
+    JSR     opcode_oprev                        ;
+    RTS                                         ;RETURN
+
+    ; REORDER OPERAND USING BIT 10(1=<ea> ♦ Dn → <ea>)
+opcode_dir2:
+    MOVE.W  opvalue,D0                          ; LOAD CURRENT INSTRUCTION
+    ANDI.W  #1024,D0                            ; TEST BIT 10
+    BNE     opcode_dir2_rev                     ; IF 0 REVERT
+    RTS                                         ;RETURN
+opcode_dir2_rev:
     JSR     opcode_oprev                        ;
     RTS                                         ;RETURN
     

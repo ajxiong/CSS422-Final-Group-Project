@@ -50,7 +50,7 @@
     LEA     $28820012,A7
     LEA     $457C(A2),A0
     ***********************
-    BEQ.B   $1050
+    BEQ.B   *-$20
     BEQ     $1000
     BLT     $1002
     ***********************
@@ -106,6 +106,13 @@
     ROR.W   D3,D2
     ROL     (A4)
     ROR     $7456(A1)
+    **************
+    MOVEM.W D1/D2/D3/D4/D5/D6/D7/A0-A2/A6/A7,-(SP)
+    MOVEM.L A0-a3/a5/a6,(SP)
+    MOVEM.W A0,-(SP)
+    MOVEM.L (SP),D2/D3/D4/A0/A2/A3
+    MOVEM.W (SP),D2-D4/A0/A2-A3
+    MOVEM.L (SP)+,A0/D1
     ********************************************************
 MAIN:
     MOVEA.L #$00100000,SP
@@ -184,6 +191,7 @@ MAINLOOP02NEXT2:
     INCLUDE 'strings.x68'
 STOP:
     END    MAIN
+
 
 
 

@@ -37,44 +37,40 @@ opcode_RO           DC.B    'RO',0
 
                     DS.L    0    ; Force longword alignment
 opcodestable:
-                            ;MnemonicMASKED VALUEINSTRUCTION MASKCC EXTRACTSIZE EXTRACTOPERAND 1OPERAND SEPARATOROPERAND 2OPERAND REORDERNONE
-
-                            ;MnemonicMASKED VALUEINSTRUCTION MASKCC EXTRACTSIZE EXTRACTOPERAND 1OPERAND SEPARATOROPERAND 2OPERAND REORDERNONE
-
-                            ;MnemonicMASKED VALUEINSTRUCTION MASKCC EXTRACTSIZE EXTRACTOPERAND 1OPERAND SEPARATOROPERAND 2OPERAND REORDERNONE
-
-                    DC.L    opcode_MOVEP, $0108, $F138,opcode_empty01,opcode_sz1,opcode_dn1op1,opcode_sep,opcode_d16a1o2,opcode_dir0
-opcodestableENTRY1:
-                    DC.L    opcode_MOVEA, $0040, $C1C0,opcode_empty01,opcode_sz2,opcode_an1op1,opcode_sep,opcode_ea1op2,opcode_oprev
-                    DC.L    opcode_MOVE, $0000, $C000,opcode_empty01,opcode_sz2,opcode_ea1op2,opcode_sep,opcode_ea2op1,opcode_oprev
-                    DC.L    opcode_NOT, $4600, $FF00,opcode_empty01,opcode_sz0,opcode_ea1op2,opcode_empty01,opcode_empty01,opcode_empty01
-                    DC.L    opcode_NOP, $4E71, $FFFF,opcode_empty01,opcode_empty01,opcode_empty01,opcode_empty01,opcode_empty01,opcode_empty01
-                    DC.L    opcode_RTS, $4E75, $FFFF,opcode_empty01,opcode_empty01,opcode_empty01,opcode_empty01,opcode_empty01,opcode_empty01
-                    DC.L    opcode_JSR, $4E80, $FFC0,opcode_empty01,opcode_empty01,opcode_ea1op2,opcode_empty01,opcode_empty01,opcode_empty01
-                    DC.L    opcode_JMP, $4EC0, $FFC0,opcode_empty01,opcode_empty01,opcode_ea1op2,opcode_empty01,opcode_empty01,opcode_empty01
-                    DC.L    opcode_MOVEM, $4880, $FB80,opcode_empty01,opcode_empty01,opcode_empty01,opcode_empty01,opcode_empty01,opcode_empty01
-                    DC.L    opcode_LEA, $41C0, $F1C0,opcode_empty01,opcode_empty01,opcode_an1op1,opcode_sep,opcode_ea1op2,opcode_oprev
-                    DC.L    opcode_ADDQ, $5000, $F100,opcode_empty01,opcode_sz0,opcode_qval,opcode_sep,opcode_ea1op2,opcode_empty01
-                    DC.L    opcode_BRA, $6000, $FF00,opcode_empty01,opcode_empty01,opcode_bdisp,opcode_empty01,opcode_empty01,opcode_empty01
-                    DC.L    opcode_B, $6000, $F000,opcode_cc,opcode_empty01,opcode_bdisp,opcode_empty01,opcode_empty01,opcode_empty01
-                    DC.L    opcode_MOVEQ, $7000, $F100,opcode_empty01,opcode_empty01,opcode_dn1op1,opcode_sep,opcode_qdataop2,opcode_oprev
-                    DC.L    opcode_OR, $8000, $F000,opcode_empty01,opcode_sz0,opcode_dn1op1,opcode_sep,opcode_ea1op2,opcode_dir1
-                    DC.L    opcode_SUB, $9000, $F000,opcode_empty01,opcode_sz0,opcode_dn1op1,opcode_sep,opcode_ea1op2,opcode_dir1
-                    DC.L    opcode_AND, $C000, $F000,opcode_empty01,opcode_sz0,opcode_dn1op1,opcode_sep,opcode_ea1op2,opcode_dir1
-                    DC.L    opcode_ADDA, $D0C0, $F0C0,opcode_empty01,opcode_sz3,opcode_an1op1,opcode_sep,opcode_ea1op2,opcode_oprev
-                    DC.L    opcode_ADD, $D000, $F000,opcode_empty01,opcode_sz0,opcode_dn1op1,opcode_sep,opcode_ea1op2,opcode_dir1
-                    DC.L    opcode_ASR, $E0C0, $FFC0,opcode_empty01,opcode_empty01,opcode_empty01,opcode_empty01,opcode_ea1op2,opcode_empty01
-                    DC.L    opcode_ASL, $E1C0, $FFC0,opcode_empty01,opcode_empty01,opcode_empty01,opcode_empty01,opcode_ea1op2,opcode_empty01
-                    DC.L    opcode_LSR, $E2C0, $FFC0,opcode_empty01,opcode_empty01,opcode_empty01,opcode_empty01,opcode_ea1op2,opcode_empty01
-                    DC.L    opcode_LSL, $E3C0, $FFC0,opcode_empty01,opcode_empty01,opcode_empty01,opcode_empty01,opcode_ea1op2,opcode_empty01
-                    DC.L    opcode_ROR, $E6C0, $FFC0,opcode_empty01,opcode_empty01,opcode_empty01,opcode_empty01,opcode_ea1op2,opcode_empty01
-                    DC.L    opcode_ROL, $E7C0, $FFC0,opcode_empty01,opcode_empty01,opcode_empty01,opcode_empty01,opcode_ea1op2,opcode_empty01
-                    DC.L    opcode_ASR, $E000, $F118,opcode_empty01,opcode_sz0,opcode_immdn1op1 ,opcode_sep,opcode_dn2op2,opcode_empty01
-                    DC.L    opcode_ASL, $E100, $F118,opcode_empty01,opcode_sz0,opcode_immdn1op1 ,opcode_sep,opcode_dn2op2,opcode_empty01
-                    DC.L    opcode_LSR, $E008, $F118,opcode_empty01,opcode_sz0,opcode_immdn1op1 ,opcode_sep,opcode_dn2op2,opcode_empty01
-                    DC.L    opcode_LSL, $E108, $F118,opcode_empty01,opcode_sz0,opcode_immdn1op1 ,opcode_sep,opcode_dn2op2,opcode_empty01
-                    DC.L    opcode_ROR, $E018, $F118,opcode_empty01,opcode_sz0,opcode_immdn1op1 ,opcode_sep,opcode_dn2op2,opcode_empty01
-                    DC.L    opcode_ROL, $E118, $F118,opcode_empty01,opcode_sz0,opcode_immdn1op1 ,opcode_sep,opcode_dn2op2,opcode_empty01
+	                            ;Mnemonic	MASKED VALUE	INSTRUCTION MASK	CC EXTRACT	SIZE EXTRACT	OPERAND 1	OPERAND SEPARATOR	OPERAND 2	OPERAND REORDER
+									
+                    DC.L    	opcode_MOVEP, 	$0108, 	$F138	,opcode_empty01	,opcode_sz1	,opcode_dn1op1	,opcode_sep	,opcode_d16a1o2	,opcode_dir0
+opcodestableENTRY1:									
+                    DC.L    	opcode_MOVEA, 	$0040, 	$C1C0	,opcode_empty01	,opcode_sz2	,opcode_an1op1	,opcode_sep	,opcode_ea1op2	,opcode_oprev
+                    DC.L    	opcode_MOVE, 	$0000, 	$C000	,opcode_empty01	,opcode_sz2	,opcode_ea1op2	,opcode_sep	,opcode_ea2op1	,opcode_oprev
+                    DC.L    	opcode_NOT, 	$4600, 	$FF00	,opcode_empty01	,opcode_sz0	,opcode_ea1op2	,opcode_empty01	,opcode_empty01	,opcode_empty01
+                    DC.L    	opcode_NOP, 	$4E71, 	$FFFF	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_empty01
+                    DC.L    	opcode_RTS, 	$4E75, 	$FFFF	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_empty01
+                    DC.L    	opcode_JSR, 	$4E80, 	$FFC0	,opcode_empty01	,opcode_empty01	,opcode_ea1op2	,opcode_empty01	,opcode_empty01	,opcode_empty01
+                    DC.L    	opcode_JMP, 	$4EC0, 	$FFC0	,opcode_empty01	,opcode_empty01	,opcode_ea1op2	,opcode_empty01	,opcode_empty01	,opcode_empty01
+                    DC.L    	opcode_MOVEM, 	$4880, 	$FB80	,opcode_empty01	,opcode_sz1	,opcode_rlmop1	,opcode_sep	,opcode_ea1op2	,opcode_dir2
+                    DC.L    	opcode_LEA, 	$41C0, 	$F1C0	,opcode_empty01	,opcode_empty01	,opcode_an1op1	,opcode_sep	,opcode_ea1op2	,opcode_oprev
+                    DC.L    	opcode_ADDQ, 	$5000, 	$F100	,opcode_empty01	,opcode_sz0	,opcode_qval	,opcode_sep	,opcode_ea1op2	,opcode_empty01
+                    DC.L    	opcode_BRA, 	$6000, 	$FF00	,opcode_empty01	,opcode_empty01	,opcode_bdisp	,opcode_empty01	,opcode_empty01	,opcode_empty01
+                    DC.L    	opcode_B, 	$6000, 	$F000	,opcode_cc	,opcode_empty01	,opcode_bdisp	,opcode_empty01	,opcode_empty01	,opcode_empty01
+                    DC.L    	opcode_MOVEQ, 	$7000, 	$F100	,opcode_empty01	,opcode_empty01	,opcode_dn1op1	,opcode_sep	,opcode_qdataop2	,opcode_oprev
+                    DC.L    	opcode_OR, 	$8000, 	$F000	,opcode_empty01	,opcode_sz0	,opcode_dn1op1	,opcode_sep	,opcode_ea1op2	,opcode_dir1
+                    DC.L    	opcode_SUB, 	$9000, 	$F000	,opcode_empty01	,opcode_sz0	,opcode_dn1op1	,opcode_sep	,opcode_ea1op2	,opcode_dir1
+                    DC.L    	opcode_AND, 	$C000, 	$F000	,opcode_empty01	,opcode_sz0	,opcode_dn1op1	,opcode_sep	,opcode_ea1op2	,opcode_dir1
+                    DC.L    	opcode_ADDA, 	$D0C0, 	$F0C0	,opcode_empty01	,opcode_sz3	,opcode_an1op1	,opcode_sep	,opcode_ea1op2	,opcode_oprev
+                    DC.L    	opcode_ADD, 	$D000, 	$F000	,opcode_empty01	,opcode_sz0	,opcode_dn1op1	,opcode_sep	,opcode_ea1op2	,opcode_dir1
+                    DC.L    	opcode_ASR, 	$E0C0, 	$FFC0	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_ea1op2	,opcode_empty01
+                    DC.L    	opcode_ASL, 	$E1C0, 	$FFC0	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_ea1op2	,opcode_empty01
+                    DC.L    	opcode_LSR, 	$E2C0, 	$FFC0	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_ea1op2	,opcode_empty01
+                    DC.L    	opcode_LSL, 	$E3C0, 	$FFC0	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_ea1op2	,opcode_empty01
+                    DC.L    	opcode_ROR, 	$E6C0, 	$FFC0	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_ea1op2	,opcode_empty01
+                    DC.L    	opcode_ROL, 	$E7C0, 	$FFC0	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_empty01	,opcode_ea1op2	,opcode_empty01
+                    DC.L    	opcode_ASR, 	$E000, 	$F118	,opcode_empty01	,opcode_sz0	,opcode_immdn1op1 	,opcode_sep	,opcode_dn2op2	,opcode_empty01
+                    DC.L    	opcode_ASL, 	$E100, 	$F118	,opcode_empty01	,opcode_sz0	,opcode_immdn1op1 	,opcode_sep	,opcode_dn2op2	,opcode_empty01
+                    DC.L    	opcode_LSR, 	$E008, 	$F118	,opcode_empty01	,opcode_sz0	,opcode_immdn1op1 	,opcode_sep	,opcode_dn2op2	,opcode_empty01
+                    DC.L    	opcode_LSL, 	$E108, 	$F118	,opcode_empty01	,opcode_sz0	,opcode_immdn1op1 	,opcode_sep	,opcode_dn2op2	,opcode_empty01
+                    DC.L    	opcode_ROR, 	$E018, 	$F118	,opcode_empty01	,opcode_sz0	,opcode_immdn1op1 	,opcode_sep	,opcode_dn2op2	,opcode_empty01
+                    DC.L    	opcode_ROL, 	$E118, 	$F118	,opcode_empty01	,opcode_sz0	,opcode_immdn1op1 	,opcode_sep	,opcode_dn2op2	,opcode_empty01
     
 opcodestableEND:
 
@@ -166,6 +162,8 @@ strcc:              DC.B    'T', 0, 0, 0
                     DC.B    'GT', 0, 0
                     DC.B    'LE', 0, 0
 
+reglstpd:             DC.B    'D/D/D/D/D/D/D/D/A/A/A/A/A/A/A/A/'
+reglstpi:             DC.B    'A/A/A/A/A/A/A/A/D/D/D/D/D/D/D/D/'
 
 
 

@@ -30,6 +30,9 @@ ptrstrop2:          DS.L    1                       ; POINTER TO STRING OPERAND
 ptrstropX:          DS.L    1                       ; POINTER TO STRING OPERAND
 
 opsize01:           DS.L    1                       ; OPERAND SIZE IN BYTES
+
+
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
